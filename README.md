@@ -20,3 +20,5 @@
 		init()初始化方法
 		update()更新方法，这个方法用来让定时器调用。
 		bindEvent()绑定监听
+#####效果展示：
+[查看演示](http://donymh.cn/ballonGame/)
