@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<title>打气球游戏</title>
+	<style>
+		*{margin: 0;padding: 0;}
+		html{
+			height: 100%;
+		}
+		body{
+			overflow: hidden;
+			height: 100%;
+			cursor:move;
+		}
+		.ballon{
+			width: 96px;
+			height: 122px;
+			position: absolute;
+			background: url(images/ballon.png);
+		}
+		#info{
+			width: 10%;
+			height: 100%;
+			color: #333;
+			font-size: 20px;
+			background-color: #B6B6B6;
+			font-family: "微软雅黑";
+			line-height: 30px;
+			padding-left: 16px;
+			padding-top: 20px;
+			cursor: auto;
+		}
+		#mes{
+			height: 300px;
+			border-bottom: 2px solid #fff;
+		}
+	
+		p{
+			position: absolute;
+			border-radius: 50%;
+			background-color: orange;
+		}
+		.btn{
+			display: block;
+			width: 130px;
+			height: 30px;
+			line-height: 30px;
+			font-size: 20px;
+			border: 1px solid #ccc;
+			border-radius:8px;
+			outline: none;
+			outline-style: none;
+			margin-top: 20px;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<div id="info">
+		<div id="mes">
+			帧　数：0<br>倒计时：0<br>总分数：0
+		</div>
+		<input type="button" value="开始游戏"  class="btn startGam" id="startGame"/>
+		<input type="button" value="结束游戏"  class="btn endGame" id="endGame"/>
+	</div>
+	<audio src="audios/bgm.mp3" autoplay />
+    <audio src="audios/bomb.wav" id="bomb" />
+	<script type="text/javascript" src="js/underscore-min.js"></script>
+	<script type="text/javascript">
+		//**********气球类***********
+		function Bullon(){
+			this.dom=null;
+			this.x=_.random(194,document.documentElement.clientWidth-96);
+			this.y=document.documentElement.clientHeight;
+			this.score=_.random(1,12);
+
+			this.init();
+			this.bindEvent();
+			bullonArr.push(this);
+		}
+		Bullon.prototype.init=function(){
+			this.dom=document.createElement("div");
+			this.dom.className="ballon";
+			this.dom.style.left=this.x+"px";
+			var imgx=(this.score-1)%4*-96;
+			var imgy=this.score<=4?0:-122*parseInt((this.score-1)/4);
+			this.dom.style.backgroundPosition=imgx+"px "+imgy+"px";
+			document.body.appendChild(this.dom);
+			this.update();
+		}
+		Bullon.prototype.update=function(){
+			this.y-=2;
+			if(this.y<-122){
+				this.goDie();
+				return;
+			}
+			this.dom.style.top=this.y+"px";
+		}
+		Bullon.prototype.goDie=function(){
+			document.body.removeChild(this.dom);
+			bullonArr=_.without(bullonArr,this);
+		}
+		Bullon.prototype.bindEvent=function(){
+			var self=this;
+			this.dom.onmousedown=function(){
+				document.getElementById("bomb").load();
+				document.getElementById("bomb").play();
+				if(self.score<=8){
+					allscore+=self.score;
+				}
+				switch(parseInt(self.score)){
+					case 9:
+						allscore*=2;
+					break;
+					case 10:
+						allscore/=2;
+					break;
+					case 11:
+						allscore=0;
+					break;
+					case 12:
+						allscore*=parseInt(Math.random()*10);	
+					break;
+				}
+				self.goDie();
+			};
+		}
+	
+
+
+		//**********用于干扰游戏的小球的类***********
+		function Ball(){
+			this.dom=null;
+			this.r=30;
+			this.x=_.random(156+this.r,document.documentElement.clientWidth-this.r);
+			this.y=_.random(0,document.documentElement.clientHeight-this.r);
+			do{
+				this.dx=_.random(-6,6);
+				this.dy=_.random(-6,6);
+			}while(this.dx==0 && this.dy==0);
+			var colors=["#EE7621","#EE6363","#EE3A8C","#E5E5E5","#DEB887","	#DBDBDB","#D9D9D9","#CDB7B5","	#CDAF95","#CD9B1D","#CD7054","#CD8500","#CD69C9","#CD5B45","#CD3333","#CD3278","#CAE1FF","#BCD2EE","#ADFF2F","#9370DB"];
+			this.color=colors[_.random(0,colors.length-1)];
+			this.init();
+			this.update();
+			ballAll.push(this);
+		}
+
+		Ball.prototype.init=function(){
+			this.dom=document.createElement("p");
+			this.dom.style.width=this.r*2+"px";
+			this.dom.style.height=this.r*2+"px";
+			this.dom.style.left=this.x+"px";
+			this.dom.style.top=this.y+"px";
+			this.dom.style.backgroundColor=this.color;
+			document.body.appendChild(this.dom);
+		}
+		Ball.prototype.update=function(){
+			//这样主要是为了让球球可以散开了出来
+			this.x+=this.dx;
+			this.y+=this.dy;
+			//改变圆心位置
+			if(this.x>document.documentElement.clientWidth-this.r||this.x<158){
+				this.dx=-this.dx;
+			}
+			if(this.y>document.documentElement.clientHeight-this.r||this.y<this.r){
+				this.dy=-this.dy;
+			}
+			//反应到dom身上
+			this.dom.style.left=this.x+"px";
+			this.dom.style.top=this.y+"px";
+		}
+		Ball.prototype.goDie=function(){
+			document.body.removeChild(this.dom);
+			ballAll=_.without(ballAll,this);
+		}
+		
+
+
+		var ballAll=[];//干扰球数组
+		var bullonArr=[];
+		var frame=0;
+		var allscore=0;
+		var count=20;
+
+		gameplay();
+
+		function gameplay(){
+			var timer=setInterval(function(){
+				frame++;
+				if(frame<=1000){
+					frame%40==0&&new Ball();
+				}
+				_.each(ballAll,function(ball){
+					ball&&ball.update();
+				});
+				document.getElementById("mes").innerHTML="帧　数："+frame+"<br>"+"	倒计时："+count+"<br>"+"总分数："+allscore;
+				_.each(bullonArr,function(bullon){
+					bullon&&bullon.update();
+				});
+				frame%50==0 && count--;
+				frame%30==0 && new Bullon();
+				if(count<0){
+					alert("GAME OVER！你的总分是："+parseFloat(allscore));
+					//游戏结束  让所有的气球消失
+					_.each(bullonArr,function(bullon){
+						bullon.goDie();
+					});
+					//如果当前时间小于0的时候   让所有的干扰的小球球消失
+					_.each(ballAll,function(ball){
+						ball.goDie();
+					});
+					clearInterval(timer);
+				}
+		    }, 20);
+		    //结束游戏
+			document.getElementById("endGame").onclick=function(){
+				clearInterval(timer);
+				alert("您强制结束了游戏！你的总分是："+parseFloat(allscore));
+					//游戏结束  让所有的气球消失
+					_.each(bullonArr,function(bullon){
+						bullon.goDie();
+					});
+					//如果当前时间小于0的时候   让所有的干扰的小球球消失
+					_.each(ballAll,function(ball){
+						ball.goDie();
+					});
+					clearInterval(timer);
+			}
+		}
+
+
+		//开始游戏
+		document.getElementById("startGame").onclick=function(){
+			 window.location.reload();		
+		}
+		
+	</script>
+</body>
+</html>
